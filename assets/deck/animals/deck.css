@@ -15,9 +15,17 @@
         background-size: 78px 132px;
         background-repeat: no-repeat;
     }
+    .cardback.deck-1{
+        background-image: url("Back.png");
+        background-size: 78px 132px;
+        background-repeat: no-repeat;
+    }
 
     .spade.cardace{
         background-image: url("As.png");
+    }
+    .spade.cardace.deck-1{
+        background-image: url("As-1.png");
     }
 
     .spade.card2{
@@ -59,20 +67,28 @@
     .spade.cardjack{
         background-image: url("Js.png");
     }
-
     .spade.cardqueen{
         background-image: url("Qs.jpg");
     }
-
     .spade.cardking{
         background-image: url("Ks.jpg");
     }
-
+    .spade.cardjack.deck-1{
+        background-image: url("Js-1.png");
+    }
+    .spade.cardqueen.deck-1{
+        background-image: url("Qs.png");
+    }
+    .spade.cardking.deck-1{
+        background-image: url("Ks.png");
+    }
 
     .diamond.cardace{
         background-image: url("Ad.jpg");
     }
-
+    .diamond.cardace.deck-1{
+        background-image: url("Ad.png");
+    }
     .diamond.card2{
         background-image: url("2d.png");
     }
@@ -120,13 +136,23 @@
     .diamond.cardking{
         background-image: url("Kd.jpg");
     }
-
+    .diamond.cardjack.deck-1{
+        background-image: url("Jd-1.png");
+    }
+    .diamond.cardqueen.deck-1{
+        background-image: url("Qd.png");
+    }
+    .diamond.cardking.deck-1{
+        background-image: url("Kd.png");
+    }
 
 
     .club.cardace{
         background-image: url("Ac.png");
     }
-
+    .club.cardace.deck-1{
+        background-image: url("Ac-1.png");
+    }
     .club.card2{
         background-image: url("2c.png");
     }
@@ -175,11 +201,24 @@
         background-image: url("Kc.jpg");
     }
 
+    .club.cardjack.deck-1{
+        background-image: url("Jc.png");
+    }
+
+    .club.cardqueen.deck-1{
+        background-image: url("Qc-1.png");
+    }
+
+    .club.cardking.deck-1{
+        background-image: url("Kc.png");
+    }
 
     .heart.cardace{
         background-image: url("Ah.png");
     }
-
+    .heart.cardace.deck-1{
+        background-image: url("Ah-1.png");
+    }
     .heart.card2{
         background-image: url("2h.png");
     }
@@ -226,4 +265,16 @@
 
     .heart.cardking{
         background-image: url("Kh.png");
+    }
+
+    .heart.cardjack.deck-1{
+        background-image: url("Jh-1.png");
+    }
+
+    .heart.cardqueen.deck-1{
+        background-image: url("Qh.png");
+    }
+
+    .heart.cardking.deck-1{
+        background-image: url("Kh-1.png");
     }
