@@ -21,6 +21,12 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     mapping(uint => Record) idToRecord;
 
+    event RecordAdded (
+        address indexed player,
+        uint indexed moves,
+        uint indexed duration
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -37,11 +43,19 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     override
     {}
 
-    function addRecord(uint moves, uint duration) public virtual {
+    function addRecord(uint moves, uint duration, bytes memory signature) public virtual {
         uint256 index = counter.current();
         counter.increment();
 
+        require(verify(msg.sender, moves, duration, signature) == true, "Signature is invalid.");
+
         idToRecord[index] = Record(
+            msg.sender,
+            moves,
+            duration
+        );
+
+        emit RecordAdded(
             msg.sender,
             moves,
             duration
@@ -56,8 +70,8 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return validator;
     }
 
-    function getMessageHash(uint chainId, address contractAddress, uint itemId, address account, uint amount) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(chainId, contractAddress, itemId, account, amount));
+    function getMessageHash(address player, uint moves, uint duration) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(player, moves, duration));
     }
 
     function getEthSignedMessageHash(bytes32 _messageHash) public pure virtual returns (bytes32) {
@@ -71,11 +85,11 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         );
     }
 
-    function verify(uint chainId, address contractAddress, uint itemId, address account, uint amount, bytes memory signature) public view virtual returns (bool) {
-        bytes32 messageHash = getMessageHash(chainId, contractAddress, itemId, account, amount);
+    function verify(address player, uint moves, uint duration, bytes memory signature) public view virtual returns (bool) {
+        bytes32 messageHash = getMessageHash(player, moves, duration);
         bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
 
-        return recoverSigner(ethSignedMessageHash, signature) == bridgeValidator;
+        return recoverSigner(ethSignedMessageHash, signature) == validator;
     }
 
     function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature) public pure virtual returns (address) {
