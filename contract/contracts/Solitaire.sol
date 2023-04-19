@@ -15,16 +15,19 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     struct Record {
         address player;
+        uint index;
         uint moves;
         uint duration;
     }
 
     mapping(uint => Record) idToRecord;
+    mapping(address => uint) totalRecords;
 
     event RecordAdded (
         address indexed player,
-        uint indexed moves,
-        uint indexed duration
+        uint indexed index,
+        uint moves,
+        uint duration
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -44,22 +47,40 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     {}
 
     function addRecord(uint moves, uint duration, bytes memory signature) public virtual {
-        uint256 index = counter.current();
+        uint id = counter.current();
         counter.increment();
 
-        require(verify(msg.sender, moves, duration, signature) == true, "Signature is invalid.");
+        uint index = totalRecords[msg.sender];
 
-        idToRecord[index] = Record(
+        require(verify(msg.sender, index, moves, duration, signature) == true, "Signature is invalid.");
+
+        idToRecord[id] = Record(
             msg.sender,
+            index,
             moves,
             duration
         );
+
+        totalRecords[msg.sender] = index + 1;
 
         emit RecordAdded(
             msg.sender,
+            index,
             moves,
             duration
         );
+    }
+
+    function getRecord(uint id) public view virtual returns (Record memory) {
+        return idToRecord[id];
+    }
+
+    function getPlayerTotalRecords(address player) public view virtual returns (uint) {
+        return totalRecords[player];
+    }
+
+    function getTotalRecords() public view virtual returns (uint) {
+        return counter.current();
     }
 
     function setValidator(address _validator) public onlyOwner virtual {
@@ -70,8 +91,8 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return validator;
     }
 
-    function getMessageHash(address player, uint moves, uint duration) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(player, moves, duration));
+    function getMessageHash(address player, uint index, uint moves, uint duration) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(player, index, moves, duration));
     }
 
     function getEthSignedMessageHash(bytes32 _messageHash) public pure virtual returns (bytes32) {
@@ -85,8 +106,8 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         );
     }
 
-    function verify(address player, uint moves, uint duration, bytes memory signature) public view virtual returns (bool) {
-        bytes32 messageHash = getMessageHash(player, moves, duration);
+    function verify(address player, uint index, uint moves, uint duration, bytes memory signature) public view virtual returns (bool) {
+        bytes32 messageHash = getMessageHash(player, index, moves, duration);
         bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
 
         return recoverSigner(ethSignedMessageHash, signature) == validator;
@@ -120,5 +141,9 @@ contract Solitaire is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         }
 
         // implicitly return (r, s, v)
+    }
+
+    function version() pure public virtual returns (string memory) {
+        return "v1";
     }
 }

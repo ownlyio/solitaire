@@ -34,7 +34,7 @@ module.exports = {
       accounts: [`0x${PRIVATE_KEY}`],
     },
     mumbai: {
-      url: "https://rpc-mumbai.maticvigil.com",
+      url: "https://matic-mumbai.chainstacklabs.com",
       chainId: 80001,
       accounts: [`0x${PRIVATE_KEY}`],
     }
