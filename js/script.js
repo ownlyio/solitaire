@@ -3,7 +3,7 @@ let mainWeb3 = null;
 let address = null;
 let env = 'prod'; // local, prod
 let endpoint = ((env === 'local') ? "http://ownly-api.test" : "https://ownly.market")
-let explorer = ((env === 'local') ? "https://mumbai.polygonscan.com/" : "https://polygonscan.com/")
+let explorer = ((env === 'local') ? "https://mumbai.polygonscan.com/" : "https://mumbai.polygonscan.com/")
 
 let incrementMoves = function() {
     moves++;
