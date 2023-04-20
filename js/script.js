@@ -80,10 +80,10 @@ let getSignature = function(duration, moves) {
         registerOnBlockchain.prop("disabled", false);
         registerOnBlockchain.html("Register on Blockchain");
 
-        registerOnBlockchain.attr("data-index", response.index);
-        registerOnBlockchain.attr("data-duration", duration);
-        registerOnBlockchain.attr("data-moves", moves);
-        registerOnBlockchain.attr("data-signature", response.signature);
+        registerOnBlockchain.attr("data-id", response.solitaireResult.id);
+        registerOnBlockchain.attr("data-duration", response.solitaireResult.duration);
+        registerOnBlockchain.attr("data-moves", response.solitaireResult.moves);
+        registerOnBlockchain.attr("data-signature", response.solitaireResult.signature);
 
         getRecords();
     }).fail(function(error) {
@@ -147,7 +147,13 @@ let getRecords = function() {
             content += '        <td class="text-center align-middle">' + response.records[i].date + '</td>';
             content += '        <td class="text-center align-middle">' + formatTime(response.records[i].duration * 1000) + '</td>';
             content += '        <td class="text-center align-middle">' + response.records[i].moves + '</td>';
-            content += '        <td class="text-center align-middle"><button class="btn btn-custom-1 btn-sm line-height-110 font-size-90 px-3 w-100 register-on-blockchain" data-index="' + response.records[i].index + '" data-duration="' + response.records[i].duration + '" data-moves="' + response.records[i].moves + '" data-signature="' + response.records[i].signature + '">Register on Blockchain</button></td>';
+            content += '        <td class="text-center align-middle">';
+            if(response.records[i].transaction_hash) {
+                content += '        <a href="' + explorer + 'tx/' + response.records[i].transaction_hash + '" target="_blank" rel="noreferrer" class="btn btn-custom-1 btn-sm line-height-110 font-size-90 px-3 w-100" style="padding-top:12px; padding-bottom:12px">Transaction Hash</a>';
+            } else {
+                content += '        <button class="btn btn-custom-1 btn-sm line-height-110 font-size-90 px-3 w-100 register-on-blockchain" data-id="' + response.records[i].id + '" data-duration="' + response.records[i].duration + '" data-moves="' + response.records[i].moves + '" data-signature="' + response.records[i].signature + '">Register on Blockchain</button>';
+            }
+            content += '        </td>';
             content += '    </tr>';
         }
         content += '    </table>';
@@ -155,6 +161,66 @@ let getRecords = function() {
         $("#records-table").html(content);
     }).fail(function(error) {
         getRecords();
+    });
+};
+let updateRecord = function(id, transactionHash) {
+    $("#records-table").html('<div class="text-center p-4"><div class="spinner-grow mb-3" role="status" style="width:50px; height:50px"><span class="visually-hidden">Loading...</span></div><p class="mb-0">Loading</p></div>');
+
+    let formData = new FormData();
+    formData.append('id', id);
+    formData.append('transactionHash', transactionHash);
+
+    $.ajax({
+        url: endpoint + "/api/solitaire/updateRecord",
+        method: "POST",
+        cache: false,
+        contentType: false,
+        processData: false,
+        data: formData
+    }).done(function(response) {
+        getLeaderboards();
+        getRecords();
+    }).fail(function(error) {
+        updateRecord(id, transactionHash);
+    });
+};
+let getLeaderboards = function() {
+    $("#leaderboards-table").html('<div class="text-center p-4"><div class="spinner-grow mb-3" role="status" style="width:50px; height:50px"><span class="visually-hidden">Loading...</span></div><p class="mb-0">Loading</p></div>');
+
+    $.ajax({
+        url: endpoint + "/api/solitaire/getLeaderboards",
+        method: "POST",
+        cache: false,
+        contentType: false,
+        processData: false,
+        data: []
+    }).done(function(response) {
+        let content = ' <table class="table table-bordered font-size-90 mb-0">';
+        content += '        <tr>';
+        content += '            <th class="text-center align-middle">Rank</th>';
+        content += '            <th class="text-center align-middle">Player</th>';
+        content += '            <th class="text-center align-middle">Moves</th>';
+        content += '            <th class="text-center align-middle">Duration</th>';
+        content += '            <th class="text-center align-middle">Score</th>';
+        content += '            <th class="text-center align-middle">Transaction</th>';
+        content += '        </tr>';
+        for(let i = 0; i < response.records.length; i++) {
+            content += '    <tr>';
+            content += '        <td class="text-center align-middle">' + (i + 1) + '</td>';
+            content += '        <td class="text-center align-middle">' + shortenAddress(response.records[i].player, 5, 4) + '</td>';
+            content += '        <td class="text-center align-middle">' + response.records[i].moves + '</td>';
+            content += '        <td class="text-center align-middle">' + formatTime(response.records[i].duration * 1000) + '</td>';
+            content += '        <td class="text-center align-middle">' + response.records[i].score + '</td>';
+            content += '        <td class="text-center align-middle">';
+            content += '            <a href="' + explorer + 'tx/' + response.records[i].transaction_hash + '" target="_blank" rel="noreferrer" class="btn btn-custom-1 btn-sm line-height-110 font-size-80 px-3 w-100">Transaction Hash</a>';
+            content += '        </td>';
+            content += '    </tr>';
+        }
+        content += '    </table>';
+
+        $("#leaderboards-table").html(content);
+    }).fail(function(error) {
+        getLeaderboards();
     });
 };
 let connectWallet = async function() {
@@ -300,6 +366,7 @@ let padZeroes = (number) => {
 };
 
 $(document).ready(async function() {
+    getLeaderboards();
     await getConnectedAddress();
 });
 
@@ -348,12 +415,13 @@ $(document).on("click", "#connect-wallet", async function() {
 });
 
 $(document).on("click", ".register-on-blockchain", async function() {
+    let id = $(this).attr("data-id");
     let duration = $(this).attr("data-duration");
     let moves = $(this).attr("data-moves");
     let signature = $(this).attr("data-signature");
 
     let chainId = 80001;
-    let contractAddress = "0xB7192f4b69B5D671404B3A7DebE23971Ae4165dB";
+    let contractAddress = "0xf65A51907E03cC68F542E4013e809AA49CFCFDD1";
     let contractAbi = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"previousAdmin","type":"address"},{"indexed":false,"internalType":"address","name":"newAdmin","type":"address"}],"name":"AdminChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"beacon","type":"address"}],"name":"BeaconUpgraded","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint8","name":"version","type":"uint8"}],"name":"Initialized","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"player","type":"address"},{"indexed":true,"internalType":"uint256","name":"index","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"moves","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"duration","type":"uint256"}],"name":"RecordAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"implementation","type":"address"}],"name":"Upgraded","type":"event"},{"inputs":[{"internalType":"uint256","name":"moves","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"addRecord","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"_messageHash","type":"bytes32"}],"name":"getEthSignedMessageHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"player","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"},{"internalType":"uint256","name":"moves","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"}],"name":"getMessageHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"player","type":"address"}],"name":"getPlayerTotalRecords","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"name":"getRecord","outputs":[{"components":[{"internalType":"address","name":"player","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"},{"internalType":"uint256","name":"moves","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"}],"internalType":"struct Solitaire.Record","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTotalRecords","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getValidator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"initialize","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"proxiableUUID","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"_ethSignedMessageHash","type":"bytes32"},{"internalType":"bytes","name":"_signature","type":"bytes"}],"name":"recoverSigner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_validator","type":"address"}],"name":"setValidator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes","name":"sig","type":"bytes"}],"name":"splitSignature","outputs":[{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"},{"internalType":"uint8","name":"v","type":"uint8"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newImplementation","type":"address"}],"name":"upgradeTo","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newImplementation","type":"address"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"upgradeToAndCall","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"player","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"},{"internalType":"uint256","name":"moves","type":"uint256"},{"internalType":"uint256","name":"duration","type":"uint256"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"verify","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"version","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"pure","type":"function"}];
 
     let button = $(this);
@@ -389,7 +457,9 @@ $(document).on("click", ".register-on-blockchain", async function() {
         $("#modal-processing").modal("hide");
 
         $("#modal-success").modal("show");
-        getRecords();
+
+        updateRecord(id, receipt.transactionHash);
+        // getRecords();
     });
 });
 
@@ -1036,7 +1106,7 @@ function drawPile(){
 // newGame() 1 turn mode: default
 // newGame(3) 3 turn mode
 // newGame(1) 1 turn mode
-function newGame(mode = 3){
+function newGame(mode = 3) {
     startTimer();
 
     if( mode == 3 ){

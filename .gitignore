@@ -1,2 +1,5 @@
 /contract/node_modules/
 /contract/.env
+/contract/.openzeppelin/
+/contract/artifacts/
+/contract/cache/
