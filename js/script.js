@@ -1,7 +1,7 @@
 let timerInterval;
 let mainWeb3 = null;
 let address = null;
-let env = 'local'; // local, prod
+let env = 'prod'; // local, prod
 let endpoint = ((env === 'local') ? "http://ownly-api.test" : "https://ownly.market")
 let explorer = ((env === 'local') ? "https://mumbai.polygonscan.com/" : "https://polygonscan.com/")
 
