@@ -87,7 +87,9 @@ let getSignature = function(duration, moves) {
 
         getRecords();
     }).fail(function(error) {
-        getSignature(duration, moves);
+        setTimeout(function() {
+            getSignature(duration, moves);
+        }, 5000);
     });
 };
 let shortenAddress = function(address, prefixCount, postfixCount) {
@@ -160,7 +162,9 @@ let getRecords = function() {
 
         $("#records-table").html(content);
     }).fail(function(error) {
-        getRecords();
+        setTimeout(function() {
+            getRecords();
+        }, 5000);
     });
 };
 let updateRecord = function(id, transactionHash) {
@@ -181,7 +185,9 @@ let updateRecord = function(id, transactionHash) {
         getLeaderboards();
         getRecords();
     }).fail(function(error) {
-        updateRecord(id, transactionHash);
+        setTimeout(function() {
+            updateRecord(id, transactionHash);
+        }, 5000);
     });
 };
 let getLeaderboards = function() {
@@ -220,7 +226,9 @@ let getLeaderboards = function() {
 
         $("#leaderboards-table").html(content);
     }).fail(function(error) {
-        getLeaderboards();
+        setTimeout(function() {
+            getLeaderboards();
+        }, 5000);
     });
 };
 let connectWallet = async function() {
